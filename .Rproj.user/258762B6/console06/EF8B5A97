@@ -1,0 +1,9 @@
+
+The default interactive shell is now zsh.
+To update your account to use zsh, please run `chsh -s /bin/zsh`.
+For more details, please visit https://support.apple.com/kb/HT208050.
+]0;~/Documents/GitHub/Graduate-School-Projects[?1034hRyans-MBP:Graduate-School-Projects ryancarroll$ [KRyans-MBP:Graduate-School-Projects ryancarroll$ git init
+xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun
+]0;~/Documents/GitHub/Graduate-School-ProjectsRyans-MBP:Graduate-School-Projects ryancarroll$ git status
+xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun
+]0;~/Documents/GitHub/Graduate-School-ProjectsRyans-MBP:Graduate-School-Projects ryancarroll$ 

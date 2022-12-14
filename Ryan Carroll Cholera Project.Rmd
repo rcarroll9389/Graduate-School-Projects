@@ -1,0 +1,208 @@
+---
+title: "Exploring the Effect of Living in a Fragile State and Cholera Rates"
+author: "Ryan Carroll"
+date: "4/10/2019"
+output: 
+  beamer_presentation:
+    theme: "AnnArbor"
+    colortheme: "dolphin"
+    fonttheme: "structurebold"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r include=FALSE, warning=FALSE, message=FALSE}
+library(readxl)
+library(haven)
+library(usmap)
+library(tidyverse)
+library(doBy)
+library(stargazer)
+library(kableExtra)
+library(ggplot2)
+library(viridis)
+library(qwraps2)
+library(magrittr)
+options(qwraps2_markup = "markdown")
+```
+
+```{r include=FALSE}
+Drive <- ("%s/Users/ryancarroll/Desktop/Spring/R")
+
+Datafor6731<- read_xlsx(sprintf("Datafor_6731.xlsx", Drive))
+str(Datafor6731)
+head(Datafor6731)
+tail(Datafor6731)
+```
+
+
+```{r include=FALSE}
+Datafor6731$iffragile<-relevel(factor(Datafor6731$FragileDummy2010), ref = "0")
+ols<-lm(log(Estimaterate+.001)~ PercentW.O.H2O+ opendeficationpercent+ HealthExpendPerCapita+ FragileDummy2010, data=Datafor6731)
+summary(ols)
+
+ols2<-lm(log(PopulationRisk+.001)~ PercentW.O.H2O+ opendeficationpercent+ HealthExpendPerCapita+ FragileDummy2010, data=Datafor6731)
+summary(ols2)
+
+ols3<-lm(log(estdeaths+.001)~ PercentW.O.H2O+ opendeficationpercent+ HealthExpendPerCapita+ FragileDummy2010, data=Datafor6731)
+summary(ols3)
+```
+
+```{r include=FALSE,  warning=FALSE, message=FALSE}
+map.world <- map_data('world')
+
+map_data('world') %>% group_by(region) %>% summarise() %>% print(n = Inf)
+
+JoinedDataMap2<- left_join(map.world,Datafor6731, by = c('region' = 'Country'))
+```
+
+
+## Fragile States
+
+- The World Bank classifies countries into Fragile States to assess the quality of policies, institutions, and their ability to support sustainable growth and poverty reduction
+- A Country Policy an Institutional Assesment (CPIA) is done for every country, and is based on 16 different criteria on a 1-6 scale
+- Those below a threshold of 3.2 are considered "Fragile, Conflicted and Violent States"
+- There are currently 34 countries on the list and are included in my model
+
+## Fragile Countries
+```{r out.width='90%'}
+
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = `iffragile`))+ 
+  labs(title =  "Fragile Countries", caption = "Source:Global Burden of Cholera 2012")+
+scale_fill_discrete(name = "Fragile States", labels =c("Not Fragile", "Fragile States")) + 
+  theme_bw() 
+
+```
+
+
+## Introduction to Cholera
+
+- Vibrio Cholerae
+- A bacterial infection usually found in contaminated/dirty water and food sources
+- Found mostly in developing countries with poor water/sanitation
+- Contracted by drinking water or eating food that comes in contact with human feces contaminated with the bacteria
+- Can cause mild to severe dehydration/diarrhea/vomiting and can lead to death if medical attention and rehydration is not quickly sought  
+
+## Estimated Global Rates
+
+- It is nearly impossible to get an accurate estimate of world wide rates
+- Underreporting of the disease is common due to various factors:
+    * Poor surveillance of disease 
+    * Deaths occurring before diagnoses/reporting
+    * Poor and rural areas affected with low access to health services 
+    * Mild cases being overlooked as diarrhea 
+- The World Health Organization estimates that only 5-10% of contracted cases are reported each year
+- The World Health Organization's database of reported numbers varies greatly by year, and many countries/years have missing data
+
+## Example with Afghanistan's Variability in Estimates
+```{r out.width='60%'}
+
+knitr::include_graphics('Afghanistan.png')
+```
+
+## Data Collection- Population at Risk
+- Population at risk was determined by calculating the percentage of the total population without access to improved sanitation.  
+- Improved sanitation data was taken from UNICEF and defined as: “percentage of the population using any of the following sanitation facilities, not shared with other households: flush or pour-flush latrine connected to a piped sewer- age system, septic tank or pit latrine; ventilated improved pit latrine; pit latrine with a slab; covered pit; composting toilet.“
+
+## Population at Risk
+```{r out.width='90%'}
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = `PercentW.O.Sanitation`)) + 
+  scale_fill_viridis(option = 'plasma', name = "Percent Without\nSanitation")+ 
+  labs(title ="Population at Risk", caption = "Source:UNICEF (2013) State of the World's Children 2013") + 
+theme_bw()
+```
+
+## Data Collection- Estimated Rates 
+
+- The estimated rate of cholera cases per year was determined by: multiplying the population at risk by the incidence rate in each country. The incidence rate was based on which mortality strata they were classified in
+
+```{r out.width='100%'}
+
+knitr::include_graphics('estimates.png')
+```
+
+
+## Data Collection- Estimated Number of Deaths
+
+- Determined by multiplying the estimated number of cases in each country, by the cholera case fatality rate (CFR)
+- CFR was taken from the same database as the incidence rates, and applied to each country strata as before
+- Administered the same rate to all age groups because death rates are very high among all age groups
+
+
+## Percent Without Adequate Water
+```{r out.width='90%'}
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = `PercentW.O.H2O`)) + 
+  scale_fill_viridis(option = 'plasma', name = "Percent Without\nSanitation")+ 
+  labs(title ="Percent Without Improved Water", caption = "Source: UNICEF (2013) State of the World's Children 2013 
+") + 
+  theme_bw()
+```
+
+## Percent Practicing Open Defecation
+```{r out.width='90%'}
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group, na.rm=TRUE)) +
+  geom_polygon(aes(fill = `opendeficationpercent`)) + 
+  scale_fill_viridis(option = 'plasma', name= "Open Defication\nPercent")+ 
+  labs(title =  "Percent Practicing Open Defecation", caption = "Source:World Health Organization Data Base") + 
+  theme_bw()
+```
+
+## Health Expenditure Per Capita in U.S. Dollars
+
+```{r out.width='90%'}
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = `HealthExpendPerCapita`)) + 
+  scale_fill_viridis(option = 'plasma', name = "Health Expend\nPer Capita")+ 
+  labs(title = "Health Expenditure per capita in dollars", caption = "Source:World Bank Data Base") + 
+  theme_bw()
+```
+
+## Equations
+
+Cross-sectional country level data from 2010 only
+
+$CholeraRate_i=\beta Fragile+X_i\Gamma+e$
+
+$CholeraRate_i=\beta_0+\beta_1 Fragile + \beta_2 W.O.H2O + \beta_3 HealthExped + \beta_4 PrecentDef + e$
+
+$PopulationAtRisk_i=\beta_0+\beta_1 Fragile + \beta_2 W.O.H2O + \beta_3 HealthExped + \beta_4 PrecentDef + e$
+
+$EstmatedDeath_i=\beta_0+\beta_1 Fragile + \beta_2 W.O.H2O + \beta_3 HealthExped + \beta_4 PrecentDef + e$
+
+## Results
+
+```{r out.width='100%'}
+knitr::include_graphics('results.png')
+```
+
+
+```{r results="asis", include=FALSE}
+stargazer(ols,ols2,ols3,
+          title="First Regression",
+          style="AER",
+          type="pdf")
+print(ols)
+print(ols2)
+print(ols3)
+stargazer(ols,
+          title="First Regression",
+          style="AER",
+          type="pdf")
+```
+
+## Citations:
+- Ali M, Nelson AR, Lopez AL, Sack DA (2015) Updated Global Burden of Cholera in Endemic Countries. PLoS Negl Trop Dis 9(6): e0003832. doi:10.1371/journal.pntd.0003832 
+- “GHO | By Category | Number of Reported Cases - Data by Country.”World Health Organization, World Health Organization, 1 Aug. 2017, apps.who.int/gho/data/node.main.175?lang=en
+- UNICEF (2013) State of the World's Children 2013 
+- http://www.worldbank.org/en/topic/fragilityconflictviolence/brief/harmonized-list-of-fragile-	situations
+- People practicing open defecation (% of population). Retrieved March 18, 2019, from		https://data.worldbank.org/indicator/SH.STA.ODFC.ZS?end=2010&page=3&start=2010
+- Current health expenditure per capita (current US$). (n.d.). Retrieved March 18, 2019, from 	https://data.worldbank.org/indicator/SH.XPD.CHEX.PC.CD?page=3
+
+
+

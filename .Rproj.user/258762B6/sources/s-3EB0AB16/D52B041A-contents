@@ -1,0 +1,184 @@
+---
+title: "Final Project 6731"
+author: "Ryan Carroll"
+date: "4/6/2019"
+output:
+   html_document: 
+    theme: sandstone
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Loading Data
+Loading all the libraries I used, and my Data
+```{r include=FALSE, warning=FALSE, message=FALSE}
+library(readxl)
+library(haven)
+library(usmap)
+library(tidyverse)
+library(doBy)
+library(stargazer)
+library(kableExtra)
+library(ggplot2)
+library(viridis)
+library(qwraps2)
+library(magrittr)
+options(qwraps2_markup = "markdown")
+
+
+Datafor6731<- read_xlsx("Datafor_6731.xlsx")
+```
+
+```{r}
+str(Datafor6731)
+```
+
+# Summary Stats 
+These are some summary statistics for my data. It is grouped by if the country is in a fragile state or not. 
+```{r}
+Datafor6731 %>% 
+  group_by(FragileDummy2010) %>%
+  summarize("Mean Open Defication"=mean(opendeficationpercent, na.rm="TRUE"),"SD1"=sd(opendeficationpercent, na.rm="TRUE"), "Mean poor water"= mean(PercentW.O.H2O, na.rm="TRUE"), "SD2"=sd(PercentW.O.H2O, na.rm="TRUE"), "Mean poor sanitation"= mean(PercentW.O.Sanitation,na.rm="TRUE"), "SD3"=sd(PercentW.O.Sanitation, na.rm="TRUE"), "Mean Estimated Rate"= mean(Estimaterate, na.rm="TRUE"),"SD4"= sd(Estimaterate,na.rm="TRUE"),"Mean Health Expenditure"=mean(HealthExpendPerCapita, na.rm="TRUE"),"SD5"=sd(HealthExpendPerCapita, na.rm="TRUE"))%>%
+knitr::kable() %>%
+  kable_styling("striped", "hover", full_width=F) %>%
+  footnote(general = "Dummy for 1= Fragile State, Dummy for 0=not Fragile")%>%
+ footnote(general = "Summary Statistics for Data")
+```
+
+# Joining Data 
+Joining my data into a world map data base to create maps for my variables (I have this step in my RMD but I included it here because it looks weird in the HTML if I dont Hide the code)
+
+map.world <- map_data('world')
+
+map_data('world') %>% group_by(region) %>% summarise() %>% print(n = Inf)
+
+
+JoinedDataMap2<- left_join(map.world,Datafor6731, by = c('region' = 'Country'))
+
+```{r include=FALSE,  warning=FALSE, message=FALSE}
+map.world <- map_data('world')
+
+map_data('world') %>% group_by(region) %>% summarise() %>% print(n = Inf)
+
+
+JoinedDataMap2<- left_join(map.world,Datafor6731, by = c('region' = 'Country'))
+```
+
+# Graphs 
+Graphs for my presentation
+```{r warning=FALSE, message=FALSE}
+
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = `PercentW.O.Sanitation`)) + 
+  scale_fill_viridis(option = 'plasma')+ 
+  labs(title = "Cholera Endemic Countries", subtitle = "% W.O Improved Sanitation", caption = "Source:UNICEF (2013) State of the World's Children 2013") + 
+theme_bw()
+
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = `PercentW.O.H2O`)) + 
+  scale_fill_viridis(option = 'plasma')+ 
+  labs(title = "Cholera Endemic Countries", subtitle = "% Without Improved Water", caption = "Source: UNICEF (2013) State of the World's Children 2013 
+") + 
+  theme_bw()
+
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = `HealthExpendPerCapita`)) + 
+  scale_fill_viridis(option = 'plasma')+ 
+  labs(title = "Cholera Epidemic", subtitle = "Health Expenditure per capita in dollars", caption = "Source:World Bank Data Base") + 
+  theme_bw()
+
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group, na.rm=TRUE)) +
+  geom_polygon(aes(fill = `opendeficationpercent`)) + 
+  scale_fill_viridis(option = 'plasma')+ 
+  labs(title = "Cholera Endemic Countries", subtitle = "% Practicing Open Defecation", caption = "Source:World Health Organization Data Base") + 
+  theme_bw()
+
+
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = `Estimaterate`)) + 
+  scale_fill_viridis(option = 'plasma' ,limits= c(1,1200000))+ 
+  labs(title = "Cholera Endemic Countries", subtitle = "Estimated Rate by Country", caption = "Source:Global Burden of Choler 2012") + 
+  theme_bw() 
+  
+
+
+ggplot(data = JoinedDataMap2, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = `iffragile`)) + 
+  labs(title = "Cholera Endemic Countries", subtitle = "Fragile Countries", caption = "Source:Global Burden of Choler 2012") + 
+  theme_bw() 
+```
+
+# Regressions 
+My three regressions for my presentation. This first is my main estimating question... Looking at the effects of living between living in a fragile state, and the estimated rates of cholera in that country. My other independent variables are: percent without adequate water supply, percent still practicing open defecation, and Health expenditure per capita in U.S. dollar. My other two dependent variables are: the population at risk, and the estimated amount of deaths. 
+
+
+$CholeraRate_i=\beta Fragile+X_i\Gamma+e$
+
+$CholeraRate_i=\beta_0+\beta_1 Fragile + \beta_2 W.O.H2O + \beta_3 HealthExped + \beta_4 PrecentDef + e$
+
+$PopulationAtRisk_i=\beta_0+\beta_1 Fragile + \beta_2 W.O.H2O + \beta_3 HealthExped + \beta_4 PrecentDef + e$
+
+$EstmatedDeath_i=\beta_0+\beta_1 Fragile + \beta_2 W.O.H2O + \beta_3 HealthExped + \beta_4 PrecentDef + e$
+
+$Y_i= \beta_0+\ x_i beta_1 + \ Young_i beta_2  + \ h(z_i) + \ k_i$
+
+```{r}
+Datafor6731$iffragile<-relevel(factor(Datafor6731$FragileDummy2010), ref = "0")
+ols<-lm(log(Estimaterate+.001)~ PercentW.O.H2O+ opendeficationpercent+ HealthExpendPerCapita+ FragileDummy2010, data=Datafor6731)
+summary(ols)
+
+ols2<-lm(log(PopulationRisk+.001)~ PercentW.O.H2O+ opendeficationpercent+ HealthExpendPerCapita+ FragileDummy2010, data=Datafor6731)
+summary(ols2)
+
+ols3<-lm(log(estdeaths+.001)~ PercentW.O.H2O+ opendeficationpercent+ HealthExpendPerCapita+ FragileDummy2010, data=Datafor6731)
+summary(ols3)
+
+ols4<-lm(log(Estimaterate+.001)~ PercentW.O.H2O+ opendeficationpercent+ HealthExpendPerCapita+ FragileDummy2010+FragileDummy2010*HealthExpendPerCapita, data=Datafor6731)
+summary(ols4)
+
+ols5<-lm(log(Estimaterate+.001)~ PercentW.O.H2O+ opendeficationpercent+ HealthExpendPerCapita+ FragileDummy2010+FragileDummy2010*opendeficationpercent, data=Datafor6731)
+summary(ols5)
+
+ols6<-lm(log(Estimaterate+.001)~ PercentW.O.H2O+ opendeficationpercent+ HealthExpendPerCapita+ FragileDummy2010+FragileDummy2010*PercentW.O.H2O+ FragileDummy2010*opendeficationpercent+ FragileDummy2010*HealthExpendPerCapita, data=Datafor6731)
+summary(ols6)
+
+ols8<-lm(log(Estimaterate+.001)~  opendeficationpercent+ FragileDummy2010+ FragileDummy2010*opendeficationpercent, data=Datafor6731)
+summary(ols8)
+```
+
+
+# Results 
+My final results table
+```{r results="asis"}
+stargazer(ols,ols2,ols3,
+          title="First Regression",
+          style="AER",
+          type="html")
+```
+
+```{r}
+stargazer(ols,
+          title="First Regression",
+          style="AER",
+          type="html")
+```
+
+```{r}
+country<-summary(Datafor6731$Country)
+country
+health<- summary(Datafor6731$HealthExpendPerCapita)
+health
+h2o<- summary(Datafor6731$PercentW.O.H2O)
+h2o
+def<- summary(Datafor6731$opendeficationpercent)
+def
+est<- summary(Datafor6731$Estimaterate)
+est
+```
+
